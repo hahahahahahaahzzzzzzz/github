@@ -163,6 +163,55 @@ class GitHubClient:
         except Exception as e:
             logger.error(f"Error fetching file content: {str(e)}")
             return ""
+
+    def get_user_repositories(self) -> List[Dict[str, Any]]:
+        """
+        Fetches all repositories accessible by the configured GITHUB_TOKENS.
+        """
+        tokens = settings.github_token_list
+        if not tokens:
+            logger.warning("No GitHub tokens configured. Cannot discover user repositories.")
+            return []
             
+        repos = []
+        seen_urls = set()
+        
+        for token in tokens:
+            headers = {
+                "Accept": "application/vnd.github.v3+json",
+                "User-Agent": "RepoLeak-Watcher-X",
+                "Authorization": f"token {token}"
+            }
+            page = 1
+            while True:
+                url = f"https://api.github.com/user/repos?per_page=100&page={page}"
+                try:
+                    response = requests.get(url, headers=headers, timeout=15)
+                    if response.status_code != 200:
+                        logger.error(f"GitHub user repos API Error: {response.status_code} - {response.text}")
+                        break
+                    
+                    data = response.json()
+                    if not data or not isinstance(data, list):
+                        break
+                        
+                    for repo in data:
+                        repo_url = repo.get("html_url")
+                        if repo_url and repo_url not in seen_urls:
+                            seen_urls.add(repo_url)
+                            repos.append({
+                                "name": repo.get("name"),
+                                "owner": repo.get("owner", {}).get("login"),
+                                "stars": repo.get("stargazers_count", 0),
+                                "url": repo_url
+                            })
+                    if len(data) < 100:
+                        break
+                    page += 1
+                except Exception as e:
+                    logger.error(f"Error fetching user repositories: {str(e)}")
+                    break
+        return repos
+
 # Singleton Instance
 github_client = GitHubClient()

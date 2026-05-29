@@ -54,6 +54,9 @@ app = FastAPI(
 def startup_event():
     from app.services.telegram import start_telegram_polling
     start_telegram_polling(SessionLocal)
+    
+    from app.services.auto_scanner import start_auto_scan_daemon
+    start_auto_scan_daemon(SessionLocal)
 
 # CORS middleware config
 app.add_middleware(
