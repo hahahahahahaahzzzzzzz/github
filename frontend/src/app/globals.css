@@ -1,0 +1,76 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  body {
+    background-color: #05060d;
+    color: #e2e8f0;
+    font-family: 'Consolas', 'Courier New', ui-monospace, SFMono-Regular, Menlo, Monaco, monospace;
+    overflow-x: hidden;
+  }
+}
+
+/* Glassmorphism Panel style */
+.cyber-panel-glass {
+  background: rgba(10, 12, 22, 0.7);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(0, 243, 255, 0.1);
+  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+}
+
+/* Glow Border Animations */
+@keyframes neon-border-pulse {
+  0%, 100% {
+    border-color: rgba(0, 243, 255, 0.15);
+    box-shadow: 0 0 10px rgba(0, 243, 255, 0.1);
+  }
+  50% {
+    border-color: rgba(0, 243, 255, 0.4);
+    box-shadow: 0 0 20px rgba(0, 243, 255, 0.25);
+  }
+}
+
+.animate-cyber-glow {
+  animation: neon-border-pulse 4s infinite alternate;
+}
+
+/* Radar Scan Line Effect */
+.cyber-grid-overlay {
+  position: relative;
+}
+.cyber-grid-overlay::before {
+  content: " ";
+  display: block;
+  position: absolute;
+  top: 0; left: 0; bottom: 0; right: 0;
+  background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%), linear-gradient(90deg, rgba(255, 0, 0, 0.06), rgba(0, 255, 0, 0.02), rgba(0, 0, 255, 0.06));
+  z-index: 10;
+  background-size: 100% 3px, 3px 100%;
+  pointer-events: none;
+}
+
+/* Neon Text Glow */
+.text-cyber-glow {
+  text-shadow: 0 0 8px rgba(0, 243, 255, 0.6);
+}
+.text-cyber-red-glow {
+  text-shadow: 0 0 8px rgba(255, 42, 95, 0.6);
+}
+
+/* Scrollbars */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: #070913;
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(0, 243, 255, 0.2);
+  border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(0, 243, 255, 0.4);
+}

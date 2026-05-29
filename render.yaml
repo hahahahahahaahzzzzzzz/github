@@ -1,0 +1,75 @@
+services:
+  # 1. PostgreSQL Database Instance (High Performance Tier)
+  - type: db
+    name: repoleak-db
+    databaseName: repoleak
+    user: postgres
+    plan: pro_plus      # Render's highest tier standard database plan (high CPU/RAM)
+
+  # 2. Redis Cache / Queue Broker (High Performance Tier)
+  - type: redis
+    name: repoleak-redis
+    plan: pro_plus      # High performance Redis instance
+
+  # 3. Python FastAPI Backend Service
+  - type: web
+    name: repoleak-backend
+    env: python
+    plan: pro_plus      # Scaled CPU and RAM instances for high throughput
+    buildCommand: "cd backend && pip install -r requirements.txt"
+    startCommand: "cd backend && uvicorn app.main:app --host 0.0.0.0 --port $PORT"
+    envVars:
+      - key: DATABASE_URL
+        fromDatabase:
+          name: repoleak-db
+          property: connectionString
+      - key: REDIS_URL
+        fromRedis:
+          name: repoleak-redis
+          property: connectionString
+      - key: SECRET_KEY
+        generateValue: true
+      - key: SIMULATION_MODE
+        value: "false"  # Set to false for live production scanning
+      - key: GITHUB_TOKENS
+        sync: false     # Will be filled manually in Render settings UI
+      - key: TELEGRAM_BOT_TOKEN
+        sync: false
+      - key: TELEGRAM_CHAT_ID
+        sync: false
+
+  # 4. Background Celery Scanning Workers
+  - type: worker
+    name: repoleak-worker
+    env: python
+    plan: pro_plus      # High memory instance to handle recursive scans
+    buildCommand: "cd backend && pip install -r requirements.txt"
+    startCommand: "cd backend && celery -A app.workers.celery_app worker --loglevel=info"
+    envVars:
+      - key: DATABASE_URL
+        fromDatabase:
+          name: repoleak-db
+          property: connectionString
+      - key: REDIS_URL
+        fromRedis:
+          name: repoleak-redis
+          property: connectionString
+      - key: SECRET_KEY
+        fromService:
+          name: repoleak-backend
+          type: web
+          envVarToImport: SECRET_KEY
+
+  # 5. Next.js Frontend UI Service
+  - type: web
+    name: repoleak-frontend
+    env: node
+    plan: pro_plus      # High capacity plan to serve dashboard requests
+    buildCommand: "cd frontend && npm install && npm run build"
+    startCommand: "cd frontend && npm run start"
+    envVars:
+      - key: NEXT_PUBLIC_API_URL
+        fromService:
+          name: repoleak-backend
+          type: web
+          property: url
