@@ -1,7 +1,7 @@
 import requests
 import base64
 import logging
-from typing import Dict, Any, List
+from typing import Dict, Any, List, Tuple
 from app.config import settings
 
 logger = logging.getLogger(__name__)
