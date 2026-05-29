@@ -41,30 +41,7 @@ services:
       - key: TELEGRAM_PERSONAL_CHAT_ID
         sync: false
 
-  # 4. Background Celery Scanning Workers
-  - type: worker
-    name: repoleak-worker
-    env: python
-    plan: starter      # Standard starter instance
-    buildCommand: "cd backend && pip install -r requirements.txt"
-    startCommand: "cd backend && celery -A app.workers.celery_app worker --loglevel=info"
-    envVars:
-      - key: DATABASE_URL
-        fromDatabase:
-          name: repoleak-db
-          property: connectionString
-      - key: REDIS_URL
-        fromService:
-          name: repoleak-redis
-          type: keyvalue
-          property: connectionString
-      - key: SECRET_KEY
-        fromService:
-          name: repoleak-backend
-          type: web
-          envVarKey: SECRET_KEY
-
-  # 5. Next.js Frontend UI Service
+  # 4. Next.js Frontend UI Service
   - type: web
     name: repoleak-frontend
     env: node
