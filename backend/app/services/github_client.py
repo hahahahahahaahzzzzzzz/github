@@ -211,7 +211,75 @@ class GitHubClient:
                 except Exception as e:
                     logger.error(f"Error fetching user repositories: {str(e)}")
                     break
-        return repos
+    def get_public_events(self) -> List[Dict[str, Any]]:
+        """
+        Fetches live public events from GitHub API to extract active public repositories.
+        """
+        url = "https://api.github.com/events?per_page=100"
+        try:
+            res = requests.get(url, headers=self._get_headers(), timeout=10)
+            if res.status_code != 200:
+                logger.error(f"GitHub public events API error: {res.status_code}")
+                return []
+                
+            repos = []
+            seen_urls = set()
+            for event in res.json():
+                # Extract repo metadata from PushEvents
+                if event.get("type") == "PushEvent":
+                    repo_meta = event.get("repo", {})
+                    name = repo_meta.get("name") # e.g. "owner/repo"
+                    if name and "/" in name:
+                        owner, repo_name = name.split("/", 1)
+                        repo_url = f"https://github.com/{name}"
+                        if repo_url not in seen_urls:
+                            seen_urls.add(repo_url)
+                            repos.append({
+                                "name": repo_name,
+                                "owner": owner,
+                                "stars": 0,
+                                "url": repo_url
+                            })
+            return repos
+        except Exception as e:
+            logger.error(f"Error fetching public events: {str(e)}")
+            return []
+
+    def get_public_repositories(self, since_id: int) -> Tuple[List[Dict[str, Any]], int]:
+        """
+        Fetches public repositories sequentially starting from a given ID.
+        Returns a list of repositories and the next since_id.
+        """
+        url = f"https://api.github.com/repositories?since={since_id}"
+        try:
+            res = requests.get(url, headers=self._get_headers(), timeout=12)
+            if res.status_code != 200:
+                logger.error(f"GitHub public repositories API error: {res.status_code}")
+                return [], since_id
+                
+            repos = []
+            max_id = since_id
+            for repo in res.json():
+                repo_id = repo.get("id")
+                if repo_id and repo_id > max_id:
+                    max_id = repo_id
+                    
+                repo_url = repo.get("html_url")
+                owner_meta = repo.get("owner", {})
+                owner = owner_meta.get("login")
+                name = repo.get("name")
+                
+                if repo_url and owner and name:
+                    repos.append({
+                        "name": name,
+                        "owner": owner,
+                        "stars": 0,
+                        "url": repo_url
+                    })
+            return repos, max_id
+        except Exception as e:
+            logger.error(f"Error fetching public repositories: {str(e)}")
+            return [], since_id
 
 # Singleton Instance
 github_client = GitHubClient()

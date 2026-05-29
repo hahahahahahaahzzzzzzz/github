@@ -26,6 +26,8 @@ class Settings(BaseSettings):
     SIMULATION_MODE: bool = Field(default=True, description="Enable simulated real-time leak generator")
     SIMULATION_INTERVAL_SECONDS: int = Field(default=5, description="Frequency of simulated leak generation")
     AUTO_SCAN_INTERVAL_SECONDS: int = Field(default=600, description="Interval in seconds for automatic GitHub repo sweeps")
+    SCAN_PUBLIC_REPOS: bool = Field(default=True, description="Enable global public crawler")
+    SCAN_PUBLIC_INTERVAL_SECONDS: int = Field(default=15, description="Frequency in seconds to poll public GitHub events/repos")
     
     model_config = SettingsConfigDict(
         env_file=".env",
