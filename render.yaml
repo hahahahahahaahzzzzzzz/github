@@ -62,7 +62,7 @@ services:
         fromService:
           name: repoleak-backend
           type: web
-          envVar: SECRET_KEY
+          envVarKey: SECRET_KEY
 
   # 5. Next.js Frontend UI Service
   - type: web
