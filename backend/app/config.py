@@ -19,6 +19,7 @@ class Settings(BaseSettings):
     GITHUB_TOKENS: str = Field(default="", description="Comma-separated GitHub Personal Access Tokens")
     TELEGRAM_BOT_TOKEN: str = Field(default="", validation_alias="TELEGRAM_BOT_TOKEN")
     TELEGRAM_CHAT_ID: str = Field(default="", validation_alias="TELEGRAM_CHAT_ID")
+    TELEGRAM_PERSONAL_CHAT_ID: str = Field(default="", validation_alias="TELEGRAM_PERSONAL_CHAT_ID")
     AI_API_KEY: str = Field(default="", validation_alias="AI_API_KEY")
     
     # System Controls

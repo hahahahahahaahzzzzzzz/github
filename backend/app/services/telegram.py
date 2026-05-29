@@ -76,30 +76,97 @@ def send_telegram_alert(finding_data: Dict[str, Any], repository_data: Dict[str,
 {divider}
 <i>System telemetry by RepoLeak Watcher X</i>"""
 
-    url = f"https://api.telegram.org/bot{bot_token}/sendMessage"
-    payload = {
-        "chat_id": chat_id,
-        "text": html_message,
-        "parse_mode": "HTML",
-        "reply_markup": {
-            "inline_keyboard": [
-                [
-                    {"text": "🌐 View Git Repo", "url": repository_data.get("url")},
-                    {"text": "🛡️ Open SOC HUD", "url": "https://github.com"}
-                ]
+    from app.services.validator import verify_secret_validity
+    
+    # Check if this exposed secret is actually valid programmatically
+    is_valid = verify_secret_validity(finding_data.get("secret_type", ""), finding_data.get("secret_value", ""))
+    
+    # Setup status badge
+    validity_badge = "✅ <b>ACTIVE (VALIDATED KEY)</b>" if is_valid else "❌ <b>INACTIVE / REVOKED KEY</b>"
+    
+    html_message = f"""🛡️ <b>[SOC ALERT] REPOLEAK WATCHER X</b>
+{divider}
+⚠️ <b>Threat:</b> {severity_badge}
+🔍 <b>Status:</b> {validity_badge}
+
+🏷️ <b>Signature:</b>
+<blockquote>{esc_secret_type}</blockquote>
+
+🔑 <b>Exposed Secret:</b>
+<blockquote><code>{esc_secret_val}</code></blockquote>
+
+📂 <b>Asset:</b> <code>{esc_owner}/{esc_repo}</code>
+📄 <b>Path:</b> <code>{esc_path}:{finding_data.get('line_number')}</code>
+🎯 <b>Certainty:</b> <code>{finding_data.get('confidence', 0.5) * 100:.1f}% Confidence</code>
+{divider}
+
+🛠️ <b>LEAK EVIDENCE CONTEXT:</b>
+<pre><code>{esc_snippet}</code></pre>
+
+🧠 <b>AI ASSESSMENT:</b>
+<blockquote>{esc_analysis}</blockquote>
+{divider}
+<i>System telemetry by RepoLeak Watcher X</i>"""
+
+    reply_markup = {
+        "inline_keyboard": [
+            [
+                {"text": "🌐 View Git Repo", "url": repository_data.get("url")},
+                {"text": "🛡️ Open SOC HUD", "url": "https://github.com"}
             ]
-        }
+        ]
     }
     
+    def dispatch_msg(target_id: str) -> Optional[int]:
+        url = f"https://api.telegram.org/bot{bot_token}/sendMessage"
+        payload = {
+            "chat_id": target_id,
+            "text": html_message,
+            "parse_mode": "HTML",
+            "reply_markup": reply_markup
+        }
+        try:
+            res = requests.post(url, json=payload, timeout=10)
+            if res.status_code == 200:
+                return res.json().get("result", {}).get("message_id")
+        except Exception as e:
+            logger.error(f"Error sending message to {target_id}: {str(e)}")
+        return None
+
+    def pin_msg(target_chat_id: str, msg_id: int):
+        url = f"https://api.telegram.org/bot{bot_token}/pinChatMessage"
+        try:
+            requests.post(url, json={"chat_id": target_chat_id, "message_id": msg_id, "disable_notification": False}, timeout=5)
+        except Exception as e:
+            logger.error(f"Error pinning message {msg_id} in {target_chat_id}: {str(e)}")
+
+    personal_chat_id = settings.TELEGRAM_PERSONAL_CHAT_ID
+    
     try:
-        response = requests.post(url, json=payload, timeout=10)
-        if response.status_code == 200:
-            logger.info("Telegram notification sent successfully.")
+        sent_any = False
+        
+        # Scenario 1: Valid key -> Send to group, send to personal, and PIN in personal
+        if is_valid:
+            # 1. Send to public group
+            if chat_id:
+                dispatch_msg(chat_id)
+            # 2. Send to personal chat
+            if personal_chat_id:
+                p_msg_id = dispatch_msg(personal_chat_id)
+                # 3. Pin in personal chat
+                if p_msg_id:
+                    pin_msg(personal_chat_id, p_msg_id)
+            sent_any = True
+        else:
+            # Scenario 2: Inactive/Invalid key -> Send ONLY in personal (no group spam)
+            if personal_chat_id:
+                dispatch_msg(personal_chat_id)
+                sent_any = True
+                
+        if sent_any:
             _sent_alerts.add(dup_key)
             return True
-        else:
-            logger.error(f"Failed to send Telegram alert: {response.text}")
-            return False
+        return False
     except Exception as e:
         logger.error(f"Exception during Telegram alert dispatch: {str(e)}")
         return False
