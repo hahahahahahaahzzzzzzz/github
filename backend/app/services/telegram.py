@@ -173,9 +173,19 @@ def telegram_polling_worker(bot_token: str, db_session_factory) -> None:
                     chat = message.get("chat", {})
                     chat_id = chat.get("id")
                     
-                    if text == "/status" and chat_id:
-                        logger.info(f"Received /status command from chat_id {chat_id}")
-                        handle_status_command(chat_id, bot_token, db_session_factory)
+                    if chat_id:
+                        if text == "/status":
+                            logger.info(f"Received /status command from chat_id {chat_id}")
+                            handle_status_command(chat_id, bot_token, db_session_factory)
+                        elif text == "/findings":
+                            logger.info(f"Received /findings command from chat_id {chat_id}")
+                            handle_findings_command(chat_id, bot_token, db_session_factory)
+                        elif text.startswith("/scan"):
+                            logger.info(f"Received /scan command from chat_id {chat_id}")
+                            handle_scan_command(chat_id, text, bot_token, db_session_factory)
+                        elif text.startswith("/resolve"):
+                            logger.info(f"Received /resolve command from chat_id {chat_id}")
+                            handle_resolve_command(chat_id, text, bot_token, db_session_factory)
                         
             elif res.status_code == 401:
                 logger.error("Telegram bot token unauthorized. Disabling updates listener.")
@@ -185,6 +195,98 @@ def telegram_polling_worker(bot_token: str, db_session_factory) -> None:
             logger.error(f"Error in Telegram getUpdates polling loop: {str(e)}")
             
         time.sleep(2)
+
+def handle_findings_command(chat_id: int, bot_token: str, db_session_factory) -> None:
+    db = db_session_factory()
+    try:
+        active_findings = db.query(Finding).filter(Finding.is_resolved == False).order_by(Finding.created_at.desc()).limit(8).all()
+        divider = "━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+        if not active_findings:
+            text = f"🛡️ <b>[SOC HUB]</b>\n{divider}\nNo active unresolved leaks detected in any asset."
+        else:
+            list_lines = []
+            for f in active_findings:
+                list_lines.append(f"🚨 ID: <code>{f.id}</code> | <b>{f.secret_type}</b>\n📄 Path: <code>{f.file_path}:{f.line_number}</code>\n")
+            list_str = "\n".join(list_lines)
+            text = f"🛡️ <b>[SOC HUB] ACTIVE INCIDENTS (Last 8)</b>\n{divider}\n{list_str}"
+            
+        url = f"https://api.telegram.org/bot{bot_token}/sendMessage"
+        requests.post(url, json={"chat_id": chat_id, "text": text, "parse_mode": "HTML"}, timeout=10)
+    except Exception as e:
+        logger.error(f"Error executing findings telemetry: {str(e)}")
+    finally:
+        db.close()
+
+def handle_scan_command(chat_id: int, command_text: str, bot_token: str, db_session_factory) -> None:
+    parts = command_text.split()
+    if len(parts) < 2:
+        text = "⚠️ Usage: <code>/scan &lt;repo_id_or_github_url&gt;</code>"
+        requests.post(f"https://api.telegram.org/bot{bot_token}/sendMessage", json={"chat_id": chat_id, "text": text, "parse_mode": "HTML"}, timeout=10)
+        return
+        
+    target = parts[1]
+    db = db_session_factory()
+    try:
+        repo = None
+        if target.isdigit():
+            repo = db.query(Repository).filter(Repository.id == int(target)).first()
+        else:
+            repo = db.query(Repository).filter(Repository.url == target).first()
+            
+        if not repo:
+            # Attempt to clean url
+            if "github.com/" in target:
+                from app.api.endpoints.scans import parse_github_url
+                owner, name = parse_github_url(target)
+                repo = Repository(name=name, owner=owner, url=target, is_monitored=1)
+                db.add(repo)
+                db.commit()
+                db.refresh(repo)
+                
+        if not repo:
+            text = "❌ Error: Target repository not found in database or invalid GitHub URL."
+            requests.post(f"https://api.telegram.org/bot{bot_token}/sendMessage", json={"chat_id": chat_id, "text": text, "parse_mode": "HTML"}, timeout=10)
+            return
+            
+        # Spawn scanner
+        from app.api.endpoints.scans import execute_repository_scan
+        from fastapi import BackgroundTasks
+        # Run synchronous within background thread to return response
+        import threading
+        thread = threading.Thread(target=execute_repository_scan, args=(repo.id, db_session_factory))
+        thread.start()
+        
+        text = f"🚀 Scan queued successfully for <b>{repo.owner}/{repo.name}</b> [ID: {repo.id}]."
+        requests.post(f"https://api.telegram.org/bot{bot_token}/sendMessage", json={"chat_id": chat_id, "text": text, "parse_mode": "HTML"}, timeout=10)
+    except Exception as e:
+        logger.error(f"Error routing /scan command: {str(e)}")
+        requests.post(f"https://api.telegram.org/bot{bot_token}/sendMessage", json={"chat_id": chat_id, "text": f"❌ Error: {str(e)}", "parse_mode": "HTML"}, timeout=10)
+    finally:
+        db.close()
+
+def handle_resolve_command(chat_id: int, command_text: str, bot_token: str, db_session_factory) -> None:
+    parts = command_text.split()
+    if len(parts) < 2 or not parts[1].isdigit():
+        text = "⚠️ Usage: <code>/resolve &lt;finding_id&gt;</code>"
+        requests.post(f"https://api.telegram.org/bot{bot_token}/sendMessage", json={"chat_id": chat_id, "text": text, "parse_mode": "HTML"}, timeout=10)
+        return
+        
+    finding_id = int(parts[1])
+    db = db_session_factory()
+    try:
+        finding = db.query(Finding).filter(Finding.id == finding_id).first()
+        if not finding:
+            text = f"❌ Error: Finding with ID <code>{finding_id}</code> not found."
+        else:
+            finding.is_resolved = True
+            db.commit()
+            text = f"✅ Incident ID <code>{finding_id}</code> has been marked as <b>RESOLVED</b>."
+            
+        requests.post(f"https://api.telegram.org/bot{bot_token}/sendMessage", json={"chat_id": chat_id, "text": text, "parse_mode": "HTML"}, timeout=10)
+    except Exception as e:
+        logger.error(f"Error updating finding status: {str(e)}")
+    finally:
+        db.close()
 
 def start_telegram_polling(db_session_factory) -> None:
     """

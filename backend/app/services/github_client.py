@@ -112,6 +112,37 @@ class GitHubClient:
             logger.error(f"Error fetching latest commit SHA: {str(e)}")
         return ""
 
+    def fetch_recent_commits(self, owner: str, repo: str, branch: str = "main", count: int = 10) -> List[Dict[str, Any]]:
+        """
+        Fetches recent commit SHAs and metadata for history scanning.
+        """
+        url = f"https://api.github.com/repos/{owner}/{repo}/commits?sha={branch}&per_page={count}"
+        headers = self._get_headers()
+        try:
+            res = requests.get(url, headers=headers, timeout=10)
+            if res.status_code == 404 and branch == "main":
+                url = f"https://api.github.com/repos/{owner}/{repo}/commits?sha=master&per_page={count}"
+                res = requests.get(url, headers=headers, timeout=10)
+            if res.status_code == 200:
+                return res.json()
+        except Exception as e:
+            logger.error(f"Error fetching recent commits: {str(e)}")
+        return []
+
+    def fetch_commit_details(self, owner: str, repo: str, sha: str) -> Dict[str, Any]:
+        """
+        Fetches full details of a commit including files mutated and patch diffs.
+        """
+        url = f"https://api.github.com/repos/{owner}/{repo}/commits/{sha}"
+        headers = self._get_headers()
+        try:
+            res = requests.get(url, headers=headers, timeout=12)
+            if res.status_code == 200:
+                return res.json()
+        except Exception as e:
+            logger.error(f"Error fetching commit details for {sha}: {str(e)}")
+        return {}
+
     def fetch_file_content(self, blob_api_url: str) -> str:
         """
         Fetches blob contents from GitHub and decodes Base64 content.
@@ -133,4 +164,5 @@ class GitHubClient:
             logger.error(f"Error fetching file content: {str(e)}")
             return ""
             
+# Singleton Instance
 github_client = GitHubClient()
