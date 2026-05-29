@@ -48,7 +48,7 @@ PATTERNS = {
     "Facebook OAuth Token": r"EAACEdEose0cBA[a-zA-Z0-9]+",
     "Square Access Token": r"EAAA[a-zA-Z0-9\-_{}]{60}",
     "Square Sandbox Token": r"EAAAE[a-zA-Z0-9\-_{}]{60}",
-    "Datadog API Key": r"[a-f0-9]{32}",
+    "Datadog API Key": r"\b[a-f0-9]{32}\b",
     "PagerDuty API Token": r"pd-[a-zA-Z0-9]{20}",
     "Shopify Access Token": r"shpat_[a-fA-F0-9]{32}",
     "DigitalOcean PAT": r"dop_v1_[a-f0-9]{64}",
@@ -60,7 +60,7 @@ PATTERNS = {
     "Supabase Key": r"(?i)supabase_(?:anon|service_role)_key\s*=\s*['\"](eyJ[a-zA-Z0-9._-]+)['\"]",
     "CircleCI PAT": r"(?i)circleci_token\s*=\s*['\"]([a-f0-9]{40})['\"]",
     "Postman API Key": r"PMAK-[a-f0-9]{24}-[a-f0-9]{24}",
-    "Shodan API Key": r"[a-zA-Z0-9]{32}",
+    "Shodan API Key": r"\b[a-zA-Z0-9]{32}\b",
     "New Relic Key": r"NRRA-[a-f0-9]{42}",
     "Plaid Secret": r"(?i)plaid_(?:client_secret|secret)\s*=\s*['\"]([a-zA-Z0-9_-]{30,50})['\"]",
     "Mapbox Token": r"[ps]k\.eyJ1[a-zA-Z0-9._-]{50,150}",
@@ -141,6 +141,23 @@ def scan_content(content: str, file_path: str = "unknown") -> List[Dict[str, Any
                 # Make sure the match has substantial content and isn't empty
                 if not secret_str or len(secret_str.strip()) < 5:
                     continue
+                
+                # Filter out generic high-entropy strings or keys that look like code variables
+                if key_type in {"Datadog API Key", "Shodan API Key", "Generic High Entropy Key"}:
+                    lowercase_line = line.lower()
+                    context_keywords = {"key", "token", "secret", "auth", "api", "password", "pass", "credential", "private", "passwd", "jwt", "connect", "credentials", "apikey", "access_key", "client_secret", "session_token"}
+                    
+                    # 1. Require at least one security context keyword on the same line
+                    if not any(kw in lowercase_line for kw in context_keywords):
+                        continue
+                        
+                    # 2. Filter out standard camelCase/snake_case programming variables/method names (only letters/underscores, no digits)
+                    if re.match(r"^[a-zA-Z_]{12,64}$", secret_str) and not any(c.isdigit() for c in secret_str):
+                        continue
+                        
+                    # 3. Filter out git commit SHAs, package lock references, or action actions (uses:, @ hashes)
+                    if "uses:" in lowercase_line or "@" in lowercase_line:
+                        continue
                 
                 classification, confidence = analyze_context(line, secret_str)
                 

@@ -233,7 +233,25 @@ def telegram_polling_worker(bot_token: str, db_session_factory) -> None:
             if res.status_code == 200:
                 updates = res.json().get("result", [])
                 for update in updates:
-                    last_update_id = update["update_id"]
+                    update_id = update.get("update_id")
+                    if not update_id:
+                        continue
+                    
+                    # Deduplicate update processing using Redis to handle multiple active containers
+                    if settings.REDIS_URL:
+                        try:
+                            import redis
+                            r = redis.Redis.from_url(settings.REDIS_URL)
+                            redis_key = f"processed_tg_update:{update_id}"
+                            is_new = r.set(redis_key, "1", ex=60, nx=True)
+                            if not is_new:
+                                # Already processed by another process, update last_update_id and skip
+                                last_update_id = max(last_update_id, update_id)
+                                continue
+                        except Exception as redis_err:
+                            logger.debug(f"Redis TG deduplication error: {str(redis_err)}")
+                            
+                    last_update_id = max(last_update_id, update_id)
                     
                     message = update.get("message", {})
                     text = message.get("text", "").strip()
