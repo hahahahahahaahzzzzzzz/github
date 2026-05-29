@@ -95,6 +95,23 @@ class GitHubClient:
             logger.error(f"Error recursively fetching repo files: {str(e)}")
             return []
 
+    def get_latest_commit_sha(self, owner: str, repo: str, branch: str = "main") -> str:
+        """
+        Fetches the latest commit SHA for checkpoint comparison.
+        """
+        url = f"https://api.github.com/repos/{owner}/{repo}/branches/{branch}"
+        headers = self._get_headers()
+        try:
+            res = requests.get(url, headers=headers, timeout=10)
+            if res.status_code == 404 and branch == "main":
+                url = f"https://api.github.com/repos/{owner}/{repo}/branches/master"
+                res = requests.get(url, headers=headers, timeout=10)
+            if res.status_code == 200:
+                return res.json().get("commit", {}).get("sha", "")
+        except Exception as e:
+            logger.error(f"Error fetching latest commit SHA: {str(e)}")
+        return ""
+
     def fetch_file_content(self, blob_api_url: str) -> str:
         """
         Fetches blob contents from GitHub and decodes Base64 content.

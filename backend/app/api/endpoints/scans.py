@@ -38,10 +38,26 @@ def execute_repository_scan(repo_id: int, db_session_factory) -> None:
     Synchronous scanning function suitable for running in background threads.
     Fetches target files recursively, runs the scanner patterns,
     evaluates findings context via AI, saves results, and sends notifications.
+    Supports checkpoint resume scanning using latest commit SHAs.
     """
     db = db_session_factory()
     repo = db.query(Repository).filter(Repository.id == repo_id).first()
     if not repo:
+        db.close()
+        return
+
+    # Fetch latest commit SHA to check for changes
+    latest_commit = github_client.get_latest_commit_sha(repo.owner, repo.name)
+    if latest_commit and repo.last_scanned_commit == latest_commit:
+        # Checkpoint matches, skip scanning to avoid duplicates and save API limits
+        scan_log = ScanHistory(
+            repository_id=repo.id,
+            status="completed",
+            findings_count=0,
+            scan_duration_ms=0
+        )
+        db.add(scan_log)
+        db.commit()
         db.close()
         return
 
@@ -120,6 +136,10 @@ def execute_repository_scan(repo_id: int, db_session_factory) -> None:
                 }
                 
                 send_telegram_alert(finding_data, repo_data)
+
+        # Update last scanned commit SHA checkpoint
+        if latest_commit:
+            repo.last_scanned_commit = latest_commit
 
         # Mark scan log completed
         scan_log.status = "completed"

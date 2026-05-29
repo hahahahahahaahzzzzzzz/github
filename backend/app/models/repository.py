@@ -12,6 +12,7 @@ class Repository(Base):
     stars = Column(Integer, default=0)
     url = Column(String, unique=True, index=True, nullable=False)
     is_monitored = Column(Integer, default=1) # 1 = yes, 0 = no
+    last_scanned_commit = Column(String, nullable=True) # Checkpoint for resume scanning
     created_at = Column(DateTime, default=datetime.datetime.utcnow)
 
     findings = relationship("Finding", back_populates="repository", cascade="all, delete-orphan")

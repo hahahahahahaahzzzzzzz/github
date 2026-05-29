@@ -172,6 +172,28 @@ MOCK_FINDINGS = [
         "snippet": "    18:     environment:\n--> 19:       - DATABASE_URL=postgresql://db_admin:AdminSecureP@ss123@prod-db.cloud.net:5432/finance\n    20:       - PORT=8080",
         "ai_analysis": "[AI Security Analyst] Postgres database credentials leaked in plaintext inside docker-compose environment setups. Exposes internal database configurations. Change the password instantly and deploy secret variables using Docker Secrets or env files.",
         "disclosure_status": "Pending"
+    },
+    {
+        "secret_type": "HuggingFace Token",
+        "secret_value": "hf_A1B2C3D4E5F6G7H8I9J0K1L2M3N4O5P6Q7",
+        "severity": "HIGH",
+        "confidence": 0.94,
+        "file_path": "scripts/download_model.py",
+        "line_number": 10,
+        "snippet": "     9: from huggingface_hub import login\n--> 10: login(token=\"hf_A1B2C3D4E5F6G7H8I9J0K1L2M3N4O5P6Q7\")\n    11: ",
+        "ai_analysis": "[AI Security Analyst] HuggingFace token exposed in model download scripts. Allows programmatic model downloads, user space uploads, and modification of repository assets. Rotate token in HuggingFace Account settings.",
+        "disclosure_status": "Pending"
+    },
+    {
+        "secret_type": "Groq API Key",
+        "secret_value": "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",
+        "severity": "HIGH",
+        "confidence": 0.92,
+        "file_path": "src/llm/client.ts",
+        "line_number": 5,
+        "snippet": "    4: const client = new Groq({\n--> 5:   apiKey: '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'\n    6: });",
+        "ai_analysis": "[AI Security Analyst] Groq API key leaked in LLM client configurations. Bad actors can hijack compute quota and deplete query credits. Deactivate and rotate this token on the Groq Console.",
+        "disclosure_status": "Pending"
     }
 ]
 

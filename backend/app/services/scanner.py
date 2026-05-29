@@ -16,7 +16,18 @@ PATTERNS = {
     "GitHub PAT": r"gh[oprs]_[A-Za-z0-9]{36,251}",
     "SSH Private Key": r"-----BEGIN\s+RSA\s+PRIVATE\s+KEY-----|-----BEGIN\s+OPENSSH\s+PRIVATE\s+KEY-----",
     "Generic Credentials URL": r"[a-zA-Z0-9]{3,20}://[a-zA-Z0-9_.-]{3,30}:[a-zA-Z0-9_.-]{3,30}@[a-zA-Z0-9_.-]{3,50}:[0-9]{2,5}",
-    "JWT HS256 Secret": r"jwt_secret|jwt-secret|token_secret\s*=\s*['\"]([a-zA-Z0-9!@#$%^&*()_+]{32,})['\"]"
+    "JWT HS256 Secret": r"jwt_secret|jwt-secret|token_secret\s*=\s*['\"]([a-zA-Z0-9!@#$%^&*()_+]{32,})['\"]",
+    "Anthropic API Key": r"sk-ant-sid01-[a-zA-Z0-9-_]{93,120}",
+    "HuggingFace Token": r"hf_[a-zA-Z0-9]{34,36}",
+    "Groq API Key": r"gsk_[a-zA-Z0-9]{48,60}",
+    "Twilio Auth Token": r"AC[a-f0-9]{32}.*?[a-f0-9]{32}",
+    "GitLab PAT": r"glpat-[a-zA-Z0-9\-=_]{20,40}",
+    "NPM Auth Token": r"npm_[a-zA-Z0-9]{36}",
+    "PyPI API Token": r"pypi-AgEIcHlwaS5vcmc[A-Za-z0-9-_]{50,150}",
+    "Cloudflare Token": r"cl_token_[a-zA-Z0-9-_]{32,45}",
+    "Azure Connection String": r"DefaultEndpointsProtocol=https;AccountName=[a-zA-Z0-9]{3,30};AccountKey=[A-Za-z0-9/+=]{40,120}",
+    "Heroku API Key": r"[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}",
+    "Generic Bearer Token": r"(?i)bearer\s+['\"]([a-zA-Z0-9\-._~+/]+=*)['\"]"
 }
 
 # Compile patterns for high performance
