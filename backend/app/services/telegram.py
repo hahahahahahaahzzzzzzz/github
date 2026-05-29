@@ -158,11 +158,8 @@ def send_telegram_alert(finding_data: Dict[str, Any], repository_data: Dict[str,
                     pin_msg(personal_chat_id, p_msg_id)
             sent_any = True
         else:
-            # Scenario 2: Inactive/Invalid key -> Send ONLY in personal (no group spam)
-            if personal_chat_id:
-                dispatch_msg(personal_chat_id)
-                sent_any = True
-                
+            logger.info(f"Telegram Alert suppressed: Key of type '{finding_data.get('secret_type')}' is verified as inactive/revoked.")
+            
         if sent_any:
             _sent_alerts.add(dup_key)
             return True

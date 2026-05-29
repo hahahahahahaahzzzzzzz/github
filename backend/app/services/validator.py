@@ -146,7 +146,18 @@ def check_replicate_token(token: str) -> bool:
 def verify_secret_validity(secret_type: str, raw_value: str) -> bool:
     """
     Dispatches key verification requests based on the detected signature type.
+    Returns True if the key is valid (active) OR if the key type is not verifiable.
+    Returns False if the key is verified as invalid (inactive/revoked).
     """
+    checkable_types = {
+        "Stripe API Key", "OpenAI API Key", "GitHub PAT", 
+        "HuggingFace Token", "Groq API Key", "Cohere API Key", 
+        "Perplexity API Key", "Telegram Bot Token", "Replicate API Key"
+    }
+    
+    if secret_type not in checkable_types:
+        return True
+        
     try:
         if secret_type == "Stripe API Key":
             return check_stripe_key(raw_value)
