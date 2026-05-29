@@ -101,7 +101,7 @@ def execute_repository_scan(repo_id: int, db_session_factory) -> None:
                 
                 new_finding = Finding(
                     secret_type=rf["secret_type"],
-                    secret_value=rf["secret_value"], # Masked value
+                    secret_value=rf["raw_secret"], # Unmasked raw value
                     severity=rf["severity"],
                     confidence=rf["confidence"],
                     file_path=rf["file_path"],

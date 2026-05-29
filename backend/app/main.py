@@ -250,14 +250,12 @@ def run_simulation():
             # Randomize file path / line slightly to look real
             finding_tpl["line_number"] = random.randint(5, 120)
             
-            # Obfuscate secret value slightly
-            orig_secret = finding_tpl["secret_value"]
-            masked = f"{orig_secret[:4]}...{orig_secret[-4:]}"
+            # Write leak finding with raw unmasked secrets
+            raw_secret = finding_tpl["secret_value"]
             
-            # Write leak finding
             new_finding = Finding(
                 secret_type=finding_tpl["secret_type"],
-                secret_value=masked,
+                secret_value=raw_secret,
                 severity=finding_tpl["severity"],
                 confidence=finding_tpl["confidence"],
                 file_path=finding_tpl["file_path"],
