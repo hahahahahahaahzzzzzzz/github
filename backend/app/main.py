@@ -126,7 +126,7 @@ MOCK_FINDINGS = [
         "file_path": "infra/terraform/providers.tf",
         "line_number": 14,
         "snippet": "--> 14:   access_key = \"AKIAIOSFODNN7EXAMPLE\"\n    15:   secret_key = \"wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY\"\n    16:   region     = \"us-east-1\"",
-        "ai_analysis": "[AI Security Analyst] The AWS Access Key exposed in terraform configurations allows immediate programmatic infrastructure modifications. An attacker could deploy compute resources for cryptomining, leading to high financial charges. Revoke credentials in IAM console and delete git history.",
+        "ai_analysis": "[AI Security Analyst] The AWS Access Key exposed in terraform configurations allows immediate programmatic infrastructure modifications. An attacker could deploy compute resources for cryptomining, leading to high financial charges.",
         "disclosure_status": "Pending"
     },
     {
@@ -137,7 +137,7 @@ MOCK_FINDINGS = [
         "file_path": "backend/payments/stripe.js",
         "line_number": 8,
         "snippet": "     7: const stripe = require('stripe');\n-->  8: const client = stripe('sk_live_51NABC123XYZ789');\n     9: \n    10: exports.charge = async (amount) => {",
-        "ai_analysis": "[AI Security Analyst] This is a Stripe Production secret key. Exposing it grants absolute programmatic control over customer cards, transaction processing, refunds, and bank account configurations. Deactivate the key in the Stripe dashboard and roll credentials immediately.",
+        "ai_analysis": "[AI Security Analyst] This is a Stripe Production secret key. Exposing it grants absolute programmatic control over customer cards, transaction processing, refunds, and bank account configurations.",
         "disclosure_status": "Pending"
     },
     {
@@ -148,7 +148,7 @@ MOCK_FINDINGS = [
         "file_path": "src/components/chat/GeminiModel.ts",
         "line_number": 22,
         "snippet": "    21:     headers: {\n--> 22:         'Authorization': 'Bearer sk-proj-7YF8H9K8D7F6S5D4E3W2Q1A0S9D8F7G6H5J4K3L2',\n    23:         'Content-Type': 'application/json'\n    24:     }",
-        "ai_analysis": "[AI Security Analyst] Exposed OpenAI key allows unauthenticated API access. An attacker could abuse your quota, leading to immediate billing exhaustion. Change the model configuration to fetch variables via Server Environment and roll key.",
+        "ai_analysis": "[AI Security Analyst] Exposed OpenAI key allows unauthenticated API access. An attacker could abuse your quota, leading to immediate billing exhaustion.",
         "disclosure_status": "Pending"
     },
     {
@@ -159,7 +159,7 @@ MOCK_FINDINGS = [
         "file_path": "android/app/src/main/res/values/strings.xml",
         "line_number": 4,
         "snippet": "    3:     <string name=\"app_name\">MyMapApp</string>\n--> 4:     <string name=\"google_maps_key\">AIzaSyD7F6S5D4E3W2Q1A0S9D8F7G6H5J4K3L2</string>\n    5: </resources>",
-        "ai_analysis": "[AI Security Analyst] This Google Maps API key is embedded in Android application configurations. Exposing it without API restrictions in Google Cloud Console allows attackers to query Geocoding and Maps APIs, driving up usage costs. Restrict keys to Android SHA1 fingerprint.",
+        "ai_analysis": "[AI Security Analyst] This Google Maps API key is embedded in Android application configurations. Exposing it without API restrictions in Google Cloud Console allows attackers to query Geocoding and Maps APIs, driving up usage costs.",
         "disclosure_status": "Pending"
     },
     {
@@ -170,7 +170,7 @@ MOCK_FINDINGS = [
         "file_path": "docker-compose.yml",
         "line_number": 19,
         "snippet": "    18:     environment:\n--> 19:       - DATABASE_URL=postgresql://db_admin:AdminSecureP@ss123@prod-db.cloud.net:5432/finance\n    20:       - PORT=8080",
-        "ai_analysis": "[AI Security Analyst] Postgres database credentials leaked in plaintext inside docker-compose environment setups. Exposes internal database configurations. Change the password instantly and deploy secret variables using Docker Secrets or env files.",
+        "ai_analysis": "[AI Security Analyst] Postgres database credentials leaked in plaintext inside docker-compose environment setups. Exposes internal database configurations to unauthorized remote connections.",
         "disclosure_status": "Pending"
     },
     {
@@ -181,7 +181,7 @@ MOCK_FINDINGS = [
         "file_path": "scripts/download_model.py",
         "line_number": 10,
         "snippet": "     9: from huggingface_hub import login\n--> 10: login(token=\"hf_A1B2C3D4E5F6G7H8I9J0K1L2M3N4O5P6Q7\")\n    11: ",
-        "ai_analysis": "[AI Security Analyst] HuggingFace token exposed in model download scripts. Allows programmatic model downloads, user space uploads, and modification of repository assets. Rotate token in HuggingFace Account settings.",
+        "ai_analysis": "[AI Security Analyst] HuggingFace token exposed in model download scripts. Allows programmatic model downloads, user space uploads, and modification of repository assets.",
         "disclosure_status": "Pending"
     },
     {
@@ -192,7 +192,7 @@ MOCK_FINDINGS = [
         "file_path": "src/llm/client.ts",
         "line_number": 5,
         "snippet": "    4: const client = new Groq({\n--> 5:   apiKey: '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'\n    6: });",
-        "ai_analysis": "[AI Security Analyst] Groq API key leaked in LLM client configurations. Bad actors can hijack compute quota and deplete query credits. Deactivate and rotate this token on the Groq Console.",
+        "ai_analysis": "[AI Security Analyst] Groq API key leaked in LLM client configurations. Bad actors can hijack compute quota and deplete query credits.",
         "disclosure_status": "Pending"
     }
 ]

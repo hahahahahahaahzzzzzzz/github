@@ -53,13 +53,17 @@ def send_telegram_alert(finding_data: Dict[str, Any], repository_data: Dict[str,
     esc_snippet = html.escape(str(finding_data.get('snippet', '')))
     esc_analysis = html.escape(str(finding_data.get('ai_analysis', '')))
     
-    html_message = f"""
-🛡️ <b>[SOC ALERT] REPOLEAK WATCHER X</b>
+    html_message = f"""🛡️ <b>[SOC ALERT] REPOLEAK WATCHER X</b>
 {divider}
 ⚠️ <b>Threat:</b> {severity_badge}
-🏷️ <b>Signature:</b> <code>{esc_secret_type}</code>
-📂 <b>Asset:</b> <code>{esc_owner}/{esc_repo}</code>
 
+🏷️ <b>Signature:</b>
+<blockquote>{esc_secret_type}</blockquote>
+
+🔑 <b>Exposed Secret:</b>
+<blockquote><code>{esc_secret_val}</code></blockquote>
+
+📂 <b>Asset:</b> <code>{esc_owner}/{esc_repo}</code>
 📄 <b>Path:</b> <code>{esc_path}:{finding_data.get('line_number')}</code>
 🎯 <b>Certainty:</b> <code>{finding_data.get('confidence', 0.5) * 100:.1f}% Confidence</code>
 {divider}
@@ -68,16 +72,9 @@ def send_telegram_alert(finding_data: Dict[str, Any], repository_data: Dict[str,
 <pre><code>{esc_snippet}</code></pre>
 
 🧠 <b>AI ASSESSMENT:</b>
-<i>{esc_analysis}</i>
+<blockquote>{esc_analysis}</blockquote>
 {divider}
-
-💡 <b>REMEDIATION PLAYBOOK:</b>
-1️⃣ Revoke compromised credentials immediately.
-2️⃣ Run <code>git-filter-repo</code> to purge history.
-3️⃣ Review backend logs for unauthorized actions.
-
-<i>System telemetry by RepoLeak Watcher X</i>
-"""
+<i>System telemetry by RepoLeak Watcher X</i>"""
 
     url = f"https://api.telegram.org/bot{bot_token}/sendMessage"
     payload = {
