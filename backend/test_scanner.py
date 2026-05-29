@@ -45,7 +45,7 @@ def test_leak_detection():
     types_found = [f['secret_type'] for f in findings]
     assert "Stripe API Key" in types_found, "Failed to detect Stripe key"
     assert "AWS Access Key" in types_found, "Failed to detect AWS ID"
-    assert "Google API Key" in types_found, "Failed to detect Google API Key"
+    assert "Google API Key / Google AI Key" in types_found, "Failed to detect Google API Key"
     
     # Check if placeholder got lower confidence
     dummy_findings = [f for f in findings if "stripe_dummy" in f['snippet'] or "aws_dummy_key" in f['snippet']]

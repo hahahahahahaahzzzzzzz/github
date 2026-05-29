@@ -9,7 +9,7 @@ PATTERNS = {
     "AWS Session Token": r"(?i)aws_(?:session)?_?(?:token)?['\"]\s*:\s*['\"]([A-Za-z0-9/+=]{100,500})['\"]",
     "OpenAI API Key": r"sk-[a-zA-Z0-9]{48}|sk-proj-[a-zA-Z0-9]{80,120}",
     "Stripe API Key": r"sk_(?:test|live)_[0-9a-zA-Z]{24,99}",
-    "Google API Key": r"AIza[0-9A-Za-z-_]{35}",
+    "Google API Key / Google AI Key": r"AIza[0-9A-Za-z-_]{35}",
     "Firebase Config": r"apiKey['\"]\s*:\s*['\"](AIza[0-9A-Za-z-_]{35})['\"]",
     "Slack Webhook": r"https://hooks\.slack\.com/services/T[A-Z0-9]{8}/B[A-Z0-9]{8,10}/[A-Za-z0-9]{24}",
     "Slack Token": r"xox[bapr]-[0-9]{10,13}-[a-zA-Z0-9]{24,32}",
@@ -19,9 +19,21 @@ PATTERNS = {
     "SSH Private Key": r"-----BEGIN\s+RSA\s+PRIVATE\s+KEY-----|-----BEGIN\s+OPENSSH\s+PRIVATE\s+KEY-----",
     "Generic Credentials URL": r"[a-zA-Z0-9]{3,20}://[a-zA-Z0-9_.-]{3,30}:[a-zA-Z0-9_.-]{3,30}@[a-zA-Z0-9_.-]{3,50}:[0-9]{2,5}",
     "JWT HS256 Secret": r"jwt_secret|jwt-secret|token_secret\s*=\s*['\"]([a-zA-Z0-9!@#$%^&*()_+]{32,})['\"]",
-    "Anthropic API Key": r"sk-ant-sid01-[a-zA-Z0-9-_]{93,120}",
+    "Anthropic API Key": r"sk-ant-sid01-[a-zA-Z0-9-_]{93,120}|sk-ant-api03-[a-zA-Z0-9-_]{86,120}",
     "HuggingFace Token": r"hf_[a-zA-Z0-9]{34,36}",
     "Groq API Key": r"gsk_[a-zA-Z0-9]{48,60}",
+    "Grok (xAI) API Key": r"xai-[a-zA-Z0-9]{48,96}",
+    "Cursor Token": r"(?i)(?:cursor_token\s*=\s*['\"]([a-zA-Z0-9._-]{32,100})['\"]|cur_[a-zA-Z0-9]{32,64})",
+    "Together AI API Key": r"(?i)(?:together_api_key|together_key\s*=\s*['\"]([a-zA-Z0-9]{64})['\"]|together_[a-zA-Z0-9]{64})",
+    "Replicate API Key": r"r8_[a-zA-Z0-9]{34,40}",
+    "DeepSeek API Key": r"(?i)(?:deepseek_api_key|deepseek_key\s*=\s*['\"]([a-zA-Z0-9]{32,64})['\"]|sk-[a-f0-9]{32})",
+    "OpenRouter API Key": r"sk-or-v1-[a-zA-Z0-9]{64}",
+    "Cohere API Key": r"(?i)(?:cohere_api_key|cohere_key\s*=\s*['\"]([a-zA-Z0-9]{40,64})['\"]|co-[a-zA-Z0-9]{40,64})",
+    "Stability AI API Key": r"(?i)(?:sk-stability-[a-zA-Z0-9]{48}|stability_api_key|stability_key\s*=\s*['\"]([a-zA-Z0-9]{48,64})['\"])",
+    "Perplexity API Key": r"pplx-[a-zA-Z0-9]{48}",
+    "LangSmith API Key": r"lsv2_pt_[a-zA-Z0-9]{40,80}",
+    "Voyage AI API Key": r"(?i)(?:voyage_api_key|voyage_key\s*=\s*['\"]([a-zA-Z0-9]{40,64})['\"]|vy-[a-zA-Z0-9]{40,64})",
+    "AI21 Labs API Key": r"(?i)(?:ai21_api_key|ai21_key\s*=\s*['\"]([a-zA-Z0-9]{32,64})['\"])",
     "Twilio Auth Token": r"AC[a-f0-9]{32}.*?[a-f0-9]{32}",
     "Twilio API Secret": r"SK[a-f0-9]{32}",
     "GitLab PAT": r"glpat-[a-zA-Z0-9\-=_]{20,40}",
@@ -81,9 +93,7 @@ def calculate_entropy(data: str) -> float:
     return entropy
 
 def mask_secret(secret: str) -> str:
-    if len(secret) <= 8:
-        return "*" * len(secret)
-    return f"{secret[:4]}...{secret[-4:]}"
+    return secret
 
 def analyze_context(line: str, secret: str) -> Tuple[str, float]:
     """
