@@ -1,23 +1,29 @@
 databases:
-  # 1. PostgreSQL Database Instance (Free Tier)
+  # PostgreSQL Database — Pro Plus (max tier)
   - name: repoleak-db
     databaseName: repoleak
-    plan: free      # Render's free tier database plan
+    plan: pro plus
+    postgresMajorVersion: 16
+    ipAllowList: []
 
 services:
-  # 2. Redis Cache / Queue Broker (Starter Tier)
+  # Redis Cache / Queue Broker — Pro (max tier for keyvalue)
   - type: keyvalue
     name: repoleak-redis
-    plan: starter      # Standard keyvalue plan
-    ipAllowList: []    # Restrict to Render private network by default
+    plan: pro
+    maxmemoryPolicy: allkeys-lru
+    ipAllowList: []
 
-  # 3. Python FastAPI Backend Service
+  # Python FastAPI Backend — Pro Ultra
   - type: web
     name: repoleak-backend
-    env: python
-    plan: starter      # Standard starter instance
+    runtime: python
+    plan: pro ultra
+    region: oregon
+    numInstances: 1
     buildCommand: "cd backend && pip install -r requirements.txt"
-    startCommand: "cd backend && uvicorn app.main:app --host 0.0.0.0 --port $PORT"
+    startCommand: "cd backend && gunicorn app.main:app --worker-class uvicorn.workers.UvicornWorker --workers 4 --threads 2 --bind 0.0.0.0:$PORT --timeout 120 --keep-alive 5 --access-logfile - --error-logfile -"
+    healthCheckPath: /health
     envVars:
       - key: DATABASE_URL
         fromDatabase:
@@ -31,26 +37,41 @@ services:
       - key: SECRET_KEY
         generateValue: true
       - key: SIMULATION_MODE
-        value: "false"  # Set to false for live production scanning
+        value: "false"
+      - key: AUTO_SCAN_INTERVAL_SECONDS
+        value: "300"
+      - key: SCAN_PUBLIC_REPOS
+        value: "true"
+      - key: SCAN_PUBLIC_INTERVAL_SECONDS
+        value: "10"
       - key: GITHUB_TOKENS
-        sync: false     # Will be filled manually in Render settings UI
+        sync: false
       - key: TELEGRAM_BOT_TOKEN
         sync: false
       - key: TELEGRAM_CHAT_ID
         sync: false
       - key: TELEGRAM_PERSONAL_CHAT_ID
         sync: false
+      - key: AI_API_KEY
+        sync: false
+      - key: PYTHON_VERSION
+        value: "3.12.3"
 
-  # 4. Next.js Frontend UI Service
+  # Next.js Frontend — Pro Ultra
   - type: web
     name: repoleak-frontend
-    env: node
-    plan: starter      # Standard starter instance
+    runtime: node
+    plan: pro ultra
+    region: oregon
+    numInstances: 1
     buildCommand: "cd frontend && npm install && npm run build"
     startCommand: "cd frontend && npm run start"
+    healthCheckPath: /
     envVars:
       - key: NEXT_PUBLIC_API_URL
         fromService:
           name: repoleak-backend
           type: web
           property: host
+      - key: NODE_VERSION
+        value: "20.11.0"

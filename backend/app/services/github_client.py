@@ -211,6 +211,8 @@ class GitHubClient:
                 except Exception as e:
                     logger.error(f"Error fetching user repositories: {str(e)}")
                     break
+        return repos
+
     def get_public_events(self) -> List[Dict[str, Any]]:
         """
         Fetches live public events from GitHub API to extract active public repositories.

@@ -40,24 +40,17 @@ services:
       - REDIS_URL=redis://redis:6379/0
       - SECRET_KEY=cyberpunk-neon-glow-secret-key-321
       - SIMULATION_MODE=true
+      - SIMULATION_INTERVAL_SECONDS=8
+      - AUTO_SCAN_INTERVAL_SECONDS=600
+      - SCAN_PUBLIC_REPOS=true
+      - SCAN_PUBLIC_INTERVAL_SECONDS=15
+      - GITHUB_TOKENS=${GITHUB_TOKENS:-}
+      - TELEGRAM_BOT_TOKEN=${TELEGRAM_BOT_TOKEN:-}
+      - TELEGRAM_CHAT_ID=${TELEGRAM_CHAT_ID:-}
+      - TELEGRAM_PERSONAL_CHAT_ID=${TELEGRAM_PERSONAL_CHAT_ID:-}
+      - AI_API_KEY=${AI_API_KEY:-}
     ports:
       - "8000:8000"
-    depends_on:
-      postgres:
-        condition: service_healthy
-      redis:
-        condition: service_healthy
-
-  celery_worker:
-    build:
-      context: ./backend
-      dockerfile: Dockerfile
-    container_name: repoleak_worker
-    command: celery -A app.workers.celery_app worker --loglevel=info
-    environment:
-      - DATABASE_URL=postgresql://postgres:DBpassword123@postgres:5432/repoleak
-      - REDIS_URL=redis://redis:6379/0
-      - SECRET_KEY=cyberpunk-neon-glow-secret-key-321
     depends_on:
       postgres:
         condition: service_healthy

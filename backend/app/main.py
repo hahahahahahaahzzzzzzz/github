@@ -73,6 +73,42 @@ app.include_router(findings.router, prefix=settings.API_V1_STR)
 app.include_router(scans.router, prefix=settings.API_V1_STR)
 app.include_router(metrics.router, prefix=settings.API_V1_STR)
 
+# Health check endpoint (no auth required)
+@app.get("/health")
+def health_check():
+    """System health check for Docker, load balancers, and monitoring."""
+    status = {"status": "ok", "service": settings.PROJECT_NAME}
+    
+    # Check DB connectivity
+    try:
+        db = SessionLocal()
+        db.execute(
+            __import__('sqlalchemy').text("SELECT 1")
+        )
+        db.close()
+        status["database"] = "connected"
+    except Exception as e:
+        status["database"] = f"error: {str(e)}"
+        status["status"] = "degraded"
+    
+    # Check Redis connectivity
+    try:
+        import redis
+        r = redis.Redis.from_url(settings.REDIS_URL, socket_timeout=2)
+        r.ping()
+        status["redis"] = "connected"
+    except Exception:
+        status["redis"] = "unavailable"
+    
+    # Report scanner config
+    status["simulation_mode"] = settings.SIMULATION_MODE
+    status["auto_scan_enabled"] = True
+    status["public_crawler_enabled"] = settings.SCAN_PUBLIC_REPOS
+    status["github_tokens_configured"] = len(settings.github_token_list)
+    status["telegram_configured"] = bool(settings.TELEGRAM_BOT_TOKEN)
+    
+    return status
+
 # WebSocket Connection Manager
 class ConnectionManager:
     def __init__(self):
