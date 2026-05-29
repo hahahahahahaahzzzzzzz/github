@@ -1,8 +1,8 @@
 databases:
-  # PostgreSQL Database — Pro Plus (max tier)
+  # PostgreSQL Database — Pro 4GB (new flexible plan)
   - name: repoleak-db
     databaseName: repoleak
-    plan: pro plus
+    plan: pro-4gb
     postgresMajorVersion: 16
     ipAllowList: []
 
