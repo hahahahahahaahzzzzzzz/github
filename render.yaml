@@ -1,13 +1,13 @@
-services:
+databases:
   # 1. PostgreSQL Database Instance (High Performance Tier)
-  - type: db
-    name: repoleak-db
+  - name: repoleak-db
     databaseName: repoleak
     user: postgres
     plan: pro_plus      # Render's highest tier standard database plan (high CPU/RAM)
 
+services:
   # 2. Redis Cache / Queue Broker (High Performance Tier)
-  - type: redis
+  - type: keyvalue
     name: repoleak-redis
     plan: pro_plus      # High performance Redis instance
 
@@ -24,8 +24,9 @@ services:
           name: repoleak-db
           property: connectionString
       - key: REDIS_URL
-        fromRedis:
+        fromService:
           name: repoleak-redis
+          type: keyvalue
           property: connectionString
       - key: SECRET_KEY
         generateValue: true
@@ -53,8 +54,9 @@ services:
           name: repoleak-db
           property: connectionString
       - key: REDIS_URL
-        fromRedis:
+        fromService:
           name: repoleak-redis
+          type: keyvalue
           property: connectionString
       - key: SECRET_KEY
         fromService:
