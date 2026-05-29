@@ -1,8 +1,8 @@
 databases:
-  # 1. PostgreSQL Database Instance (Starter Tier)
+  # 1. PostgreSQL Database Instance (Free Tier)
   - name: repoleak-db
     databaseName: repoleak
-    plan: starter      # Render's standard starter database plan
+    plan: free      # Render's free tier database plan
 
 services:
   # 2. Redis Cache / Queue Broker (Starter Tier)
