@@ -1,21 +1,21 @@
 databases:
-  # 1. PostgreSQL Database Instance (High Performance Tier)
+  # 1. PostgreSQL Database Instance (Starter Tier)
   - name: repoleak-db
     databaseName: repoleak
-    user: postgres
-    plan: pro_plus      # Render's highest tier standard database plan (high CPU/RAM)
+    plan: starter      # Render's standard starter database plan
 
 services:
-  # 2. Redis Cache / Queue Broker (High Performance Tier)
+  # 2. Redis Cache / Queue Broker (Starter Tier)
   - type: keyvalue
     name: repoleak-redis
-    plan: pro_plus      # High performance Redis instance
+    plan: starter      # Standard keyvalue plan
+    ipAllowList: []    # Restrict to Render private network by default
 
   # 3. Python FastAPI Backend Service
   - type: web
     name: repoleak-backend
     env: python
-    plan: pro_plus      # Scaled CPU and RAM instances for high throughput
+    plan: starter      # Standard starter instance
     buildCommand: "cd backend && pip install -r requirements.txt"
     startCommand: "cd backend && uvicorn app.main:app --host 0.0.0.0 --port $PORT"
     envVars:
@@ -45,7 +45,7 @@ services:
   - type: worker
     name: repoleak-worker
     env: python
-    plan: pro_plus      # High memory instance to handle recursive scans
+    plan: starter      # Standard starter instance
     buildCommand: "cd backend && pip install -r requirements.txt"
     startCommand: "cd backend && celery -A app.workers.celery_app worker --loglevel=info"
     envVars:
@@ -62,13 +62,13 @@ services:
         fromService:
           name: repoleak-backend
           type: web
-          envVarToImport: SECRET_KEY
+          envVar: SECRET_KEY
 
   # 5. Next.js Frontend UI Service
   - type: web
     name: repoleak-frontend
     env: node
-    plan: pro_plus      # High capacity plan to serve dashboard requests
+    plan: starter      # Standard starter instance
     buildCommand: "cd frontend && npm install && npm run build"
     startCommand: "cd frontend && npm run start"
     envVars:
@@ -76,4 +76,4 @@ services:
         fromService:
           name: repoleak-backend
           type: web
-          property: url
+          property: host

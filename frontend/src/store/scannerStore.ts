@@ -68,8 +68,16 @@ interface ScannerState {
   connectWebSocket: () => void;
 }
 
-const API_BASE = "http://localhost:8000/api/v1";
-const WS_BASE = "ws://localhost:8000/ws";
+let apiEnv = typeof window !== "undefined" && (window as any).__env_api_url 
+  ? (window as any).__env_api_url 
+  : (process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000");
+
+if (apiEnv && !apiEnv.startsWith("http://") && !apiEnv.startsWith("https://")) {
+  apiEnv = "https://" + apiEnv;
+}
+
+const API_BASE = `${apiEnv.replace(/\/$/, '')}/api/v1`;
+const WS_BASE = `${apiEnv.replace(/^http/, 'ws').replace(/\/$/, '')}/ws`;
 
 export const useScannerStore = create<ScannerState>((set, get) => ({
   findings: [],
