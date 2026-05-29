@@ -76,6 +76,13 @@ if (apiEnv && !apiEnv.startsWith("http://") && !apiEnv.startsWith("https://")) {
   apiEnv = "https://" + apiEnv;
 }
 
+if (typeof window !== "undefined") {
+  const isHttps = window.location.protocol === "https:";
+  if (isHttps && apiEnv.startsWith("http://")) {
+    apiEnv = apiEnv.replace(/^http:\/\//, "https://");
+  }
+}
+
 const API_BASE = `${apiEnv.replace(/\/$/, '')}/api/v1`;
 const WS_BASE = `${apiEnv.replace(/^http/, 'ws').replace(/\/$/, '')}/ws`;
 
